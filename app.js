@@ -4370,6 +4370,52 @@ function _Browser_load(url)
 		}
 	}));
 }
+
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -5159,19 +5205,50 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$Main$GotTimeAndZone = function (a) {
+	return {$: 'GotTimeAndZone', a: a};
+};
 var $author$project$Main$Selection = {$: 'Selection'};
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Set$Set_elm_builtin = function (a) {
 	return {$: 'Set_elm_builtin', a: a};
 };
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{mode: $author$project$Main$Selection, overCordinate: $elm$core$Maybe$Nothing, pressed: $elm$core$Maybe$Nothing, selectedSet: $elm$core$Set$empty},
-		$elm$core$Platform$Cmd$none);
+		{daySeries: _List_Nil, mode: $author$project$Main$Selection, now: $elm$core$Maybe$Nothing, overCordinate: $elm$core$Maybe$Nothing, pressed: $elm$core$Maybe$Nothing, selectedSet: $elm$core$Set$empty, timeSeries: $elm$core$Dict$empty, timeSeriesLength: 7, zone: $elm$time$Time$utc},
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					A2(
+					$elm$core$Task$perform,
+					$author$project$Main$GotTimeAndZone,
+					A3($elm$core$Task$map2, $elm$core$Tuple$pair, $elm$time$Time$now, $elm$time$Time$here))
+				])));
 };
 var $author$project$Main$Released = {$: 'Released'};
 var $elm$core$Basics$always = F2(
@@ -5610,6 +5687,18 @@ var $author$project$Main$subscriptions = function (model) {
 			model.pressed));
 };
 var $author$project$Main$Deselection = {$: 'Deselection'};
+var $author$project$Main$Pressed = function (a) {
+	return {$: 'Pressed', a: a};
+};
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $author$project$TimeUtils$addDays = F2(
+	function (day, time) {
+		return $elm$time$Time$millisToPosix(
+			$elm$time$Time$posixToMillis(time) + (86400000 * day));
+	});
 var $elm$core$Set$insert = F2(
 	function (key, _v0) {
 		var dict = _v0.a;
@@ -5992,6 +6081,21 @@ var $author$project$Main$applySelectionMode = F3(
 			return A2($elm$core$Set$remove, cordinate, set);
 		}
 	});
+var $author$project$Main$daySeriesRange = A2($elm$core$List$range, 1, 7);
+var $author$project$TimeUtils$addMinutes = F2(
+	function (minutes, time) {
+		return $elm$time$Time$millisToPosix(
+			$elm$time$Time$posixToMillis(time) + ((minutes * 1000) * 60));
+	});
+var $author$project$TimeUtils$generatePosixList = function (cleanedStartingPosix) {
+	var startingPosix = A2($author$project$TimeUtils$addMinutes, 8 * 60, cleanedStartingPosix);
+	return A2(
+		$elm$core$List$map,
+		function (multiply) {
+			return A2($author$project$TimeUtils$addMinutes, 30 * multiply, startingPosix);
+		},
+		A2($elm$core$List$range, 0, 10 * 2));
+};
 var $elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -6011,10 +6115,6 @@ var $elm$core$List$concatMap = F2(
 var $elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
 	});
 var $author$project$Main$getCordinatesBetween = F2(
 	function (_v0, _v1) {
@@ -6039,6 +6139,15 @@ var $author$project$Main$getCordinatesBetween = F2(
 				A2($elm$core$Basics$min, x1, x2),
 				A2($elm$core$Basics$max, x1, x2)));
 	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
 		get:
@@ -6084,9 +6193,184 @@ var $elm$core$Set$member = F2(
 		var dict = _v0.a;
 		return A2($elm$core$Dict$member, key, dict);
 	});
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$time$Time$toHour = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			24,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60));
+	});
+var $author$project$TimeUtils$removeHours = F2(
+	function (zone, time) {
+		var posixInMillis = $elm$time$Time$posixToMillis(time);
+		var hours = A2($elm$time$Time$toHour, zone, time);
+		return $elm$time$Time$millisToPosix(posixInMillis - (((hours * 1000) * 60) * 60));
+	});
+var $elm$time$Time$toMillis = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			1000,
+			$elm$time$Time$posixToMillis(time));
+	});
+var $author$project$TimeUtils$removeMillis = F2(
+	function (zone, time) {
+		var posixInMillis = $elm$time$Time$posixToMillis(time);
+		var milliSeconds = A2($elm$time$Time$toMillis, zone, time);
+		return $elm$time$Time$millisToPosix(posixInMillis - milliSeconds);
+	});
+var $elm$time$Time$toMinute = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2($elm$time$Time$toAdjustedMinutes, zone, time));
+	});
+var $author$project$TimeUtils$removeMinutes = F2(
+	function (zone, time) {
+		var posixInMillis = $elm$time$Time$posixToMillis(time);
+		var minutes = A2($elm$time$Time$toMinute, zone, time);
+		return $elm$time$Time$millisToPosix(posixInMillis - ((minutes * 1000) * 60));
+	});
+var $elm$time$Time$toSecond = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				1000));
+	});
+var $author$project$TimeUtils$removeSeconds = F2(
+	function (zone, time) {
+		var seconds = A2($elm$time$Time$toSecond, zone, time);
+		var posixInMillis = $elm$time$Time$posixToMillis(time);
+		return $elm$time$Time$millisToPosix(posixInMillis - (seconds * 1000));
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
+			case 'GotTimeAndZone':
+				var _v1 = msg.a;
+				var now = _v1.a;
+				var zone = _v1.b;
+				var cleaned = A2(
+					$author$project$TimeUtils$removeHours,
+					zone,
+					A2(
+						$author$project$TimeUtils$removeMinutes,
+						zone,
+						A2(
+							$author$project$TimeUtils$removeSeconds,
+							zone,
+							A2($author$project$TimeUtils$removeMillis, zone, now))));
+				var daySeries = A3(
+					$elm$core$List$foldr,
+					F2(
+						function (cur, acc) {
+							return A2(
+								$elm$core$List$cons,
+								A2($author$project$TimeUtils$addDays, cur, cleaned),
+								acc);
+						}),
+					_List_Nil,
+					$author$project$Main$daySeriesRange);
+				var timeSeriesForDaySeries = A2($elm$core$List$map, $author$project$TimeUtils$generatePosixList, daySeries);
+				var lengthOfTimeSeries = A2(
+					$elm$core$Maybe$withDefault,
+					7,
+					A2(
+						$elm$core$Maybe$map,
+						$elm$core$List$length,
+						$elm$core$List$head(timeSeriesForDaySeries)));
+				var timeSeriesDict = A3(
+					$elm$core$List$foldl,
+					F2(
+						function (cur, _v2) {
+							var row = _v2.a;
+							var acc = _v2.b;
+							return _Utils_Tuple2(
+								row + 1,
+								A3(
+									$elm$core$List$foldl,
+									F2(
+										function (time, _v3) {
+											var col = _v3.a;
+											var dict = _v3.b;
+											return _Utils_Tuple2(
+												col + 1,
+												A3(
+													$elm$core$Dict$insert,
+													_Utils_Tuple2(col, row),
+													time,
+													dict));
+										}),
+									_Utils_Tuple2(1, acc),
+									cur).b);
+						}),
+					_Utils_Tuple2(1, model.timeSeries),
+					timeSeriesForDaySeries).b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							daySeries: daySeries,
+							now: $elm$core$Maybe$Just(cleaned),
+							timeSeries: timeSeriesDict,
+							timeSeriesLength: lengthOfTimeSeries,
+							zone: zone
+						}),
+					$elm$core$Platform$Cmd$none);
 			case 'Pressed':
 				var cordinate = msg.a;
 				var mode = A2($elm$core$Set$member, cordinate, model.selectedSet) ? $author$project$Main$Deselection : $author$project$Main$Selection;
@@ -6120,12 +6404,21 @@ var $author$project$Main$update = F2(
 									model.pressed))
 						}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'Released':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{mode: $author$project$Main$Selection, pressed: $elm$core$Maybe$Nothing}),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var cordinate = msg.a;
+				return A2(
+					$author$project$Main$update,
+					$author$project$Main$Released,
+					A2(
+						$author$project$Main$update,
+						$author$project$Main$Pressed(cordinate),
+						model).a);
 		}
 	});
 var $elm$json$Json$Encode$string = _Json_wrap;
@@ -6138,8 +6431,377 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $author$project$Main$Pressed = function (a) {
-	return {$: 'Pressed', a: a};
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $author$project$TimeUtils$isIncrementOf30Minutes = F2(
+	function (source, target) {
+		return _Utils_eq(
+			A2($author$project$TimeUtils$addMinutes, 30, source),
+			target);
+	});
+var $elm_community$list_extra$List$Extra$last = function (items) {
+	last:
+	while (true) {
+		if (!items.b) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			if (!items.b.b) {
+				var x = items.a;
+				return $elm$core$Maybe$Just(x);
+			} else {
+				var rest = items.b;
+				var $temp$items = rest;
+				items = $temp$items;
+				continue last;
+			}
+		}
+	}
+};
+var $author$project$TimeUtils$prependZeroIfLessThan = F2(
+	function (targetLength, target) {
+		return _Utils_eq(
+			$elm$core$String$length(target),
+			targetLength) ? target : ('0' + target);
+	});
+var $author$project$TimeUtils$timeFormat = F2(
+	function (zone, posix) {
+		var minutes = A2(
+			$author$project$TimeUtils$prependZeroIfLessThan,
+			2,
+			$elm$core$String$fromInt(
+				A2($elm$time$Time$toMinute, zone, posix)));
+		var hours = A2($elm$time$Time$toHour, zone, posix);
+		var hoursInString = A2(
+			$author$project$TimeUtils$prependZeroIfLessThan,
+			2,
+			$elm$core$String$fromInt(
+				(hours > 12) ? (hours - 12) : hours));
+		var meridiem = (hours > 12) ? 'pm' : 'am';
+		return hoursInString + (':' + (minutes + (' ' + meridiem)));
+	});
+var $author$project$Main$combineTimePosixValues = F2(
+	function (zone, ls) {
+		var _v0 = A3(
+			$elm$core$List$foldl,
+			F2(
+				function (cur, _v1) {
+					var maybePrevTime = _v1.a;
+					var acc = _v1.b;
+					if (maybePrevTime.$ === 'Nothing') {
+						return _Utils_Tuple2(
+							$elm$core$Maybe$Just(cur),
+							A2(
+								$elm$core$List$cons,
+								_List_fromArray(
+									[cur]),
+								acc));
+					} else {
+						var prevTime = maybePrevTime.a;
+						return A2($author$project$TimeUtils$isIncrementOf30Minutes, prevTime, cur) ? _Utils_Tuple2(
+							$elm$core$Maybe$Just(cur),
+							A2(
+								$elm$core$Maybe$withDefault,
+								acc,
+								A2(
+									$elm$core$Maybe$map,
+									function (timings) {
+										return A2(
+											$elm$core$List$cons,
+											timings,
+											A2($elm$core$List$drop, 1, acc));
+									},
+									A2(
+										$elm$core$Maybe$map,
+										$elm$core$List$cons(cur),
+										$elm$core$List$head(acc))))) : _Utils_Tuple2(
+							$elm$core$Maybe$Just(cur),
+							A2(
+								$elm$core$List$cons,
+								_List_fromArray(
+									[cur]),
+								acc));
+					}
+				}),
+			_Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil),
+			ls);
+		var result = _v0.b;
+		return A2(
+			$elm$core$List$map,
+			function (timings) {
+				var _v3 = _Utils_Tuple2(
+					$elm_community$list_extra$List$Extra$last(timings),
+					$elm$core$List$head(timings));
+				if ((_v3.a.$ === 'Just') && (_v3.b.$ === 'Just')) {
+					var start = _v3.a.a;
+					var end = _v3.b.a;
+					return _Utils_eq(start, end) ? A2($author$project$TimeUtils$timeFormat, zone, start) : (A2($author$project$TimeUtils$timeFormat, zone, start) + ('-' + A2($author$project$TimeUtils$timeFormat, zone, end)));
+				} else {
+					return '';
+				}
+			},
+			$elm$core$List$reverse(result));
+	});
+var $author$project$Main$groupIncrementalTimeTogether = F2(
+	function (zone, dict) {
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (key, value, acc) {
+					return A2(
+						$elm$core$List$cons,
+						_Utils_Tuple2(
+							key,
+							A2(
+								$elm$core$String$join,
+								', ',
+								A2($author$project$Main$combineTimePosixValues, zone, value))),
+						acc);
+				}),
+			_List_Nil,
+			dict);
+	});
+var $elm$core$Set$foldl = F3(
+	function (func, initialState, _v0) {
+		var dict = _v0.a;
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (key, _v1, state) {
+					return A2(func, key, state);
+				}),
+			initialState,
+			dict);
+	});
+var $elm$time$Time$Fri = {$: 'Fri'};
+var $elm$time$Time$Mon = {$: 'Mon'};
+var $elm$time$Time$Sat = {$: 'Sat'};
+var $elm$time$Time$Sun = {$: 'Sun'};
+var $elm$time$Time$Thu = {$: 'Thu'};
+var $elm$time$Time$Tue = {$: 'Tue'};
+var $elm$time$Time$Wed = {$: 'Wed'};
+var $elm$time$Time$toWeekday = F2(
+	function (zone, time) {
+		var _v0 = A2(
+			$elm$core$Basics$modBy,
+			7,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60 * 24));
+		switch (_v0) {
+			case 0:
+				return $elm$time$Time$Thu;
+			case 1:
+				return $elm$time$Time$Fri;
+			case 2:
+				return $elm$time$Time$Sat;
+			case 3:
+				return $elm$time$Time$Sun;
+			case 4:
+				return $elm$time$Time$Mon;
+			case 5:
+				return $elm$time$Time$Tue;
+			default:
+				return $elm$time$Time$Wed;
+		}
+	});
+var $elm$core$Dict$update = F3(
+	function (targetKey, alter, dictionary) {
+		var _v0 = alter(
+			A2($elm$core$Dict$get, targetKey, dictionary));
+		if (_v0.$ === 'Just') {
+			var value = _v0.a;
+			return A3($elm$core$Dict$insert, targetKey, value, dictionary);
+		} else {
+			return A2($elm$core$Dict$remove, targetKey, dictionary);
+		}
+	});
+var $author$project$TimeUtils$weekdayToInt = function (week) {
+	switch (week.$) {
+		case 'Mon':
+			return 0;
+		case 'Tue':
+			return 1;
+		case 'Wed':
+			return 2;
+		case 'Thu':
+			return 3;
+		case 'Fri':
+			return 4;
+		case 'Sat':
+			return 5;
+		default:
+			return 6;
+	}
+};
+var $author$project$Main$groupSelectedByDay = F3(
+	function (zone, timeSeries, selectedSet) {
+		return A3(
+			$elm$core$Set$foldl,
+			F2(
+				function (cur, acc) {
+					return A2(
+						$elm$core$Maybe$withDefault,
+						acc,
+						A2(
+							$elm$core$Maybe$map,
+							function (posix) {
+								var key = $author$project$TimeUtils$weekdayToInt(
+									A2($elm$time$Time$toWeekday, zone, posix));
+								return A2($elm$core$Dict$member, key, acc) ? A3(
+									$elm$core$Dict$update,
+									key,
+									$elm$core$Maybe$map(
+										$elm$core$List$cons(posix)),
+									acc) : A3(
+									$elm$core$Dict$insert,
+									key,
+									_List_fromArray(
+										[posix]),
+									acc);
+							},
+							A2($elm$core$Dict$get, cur, timeSeries)));
+				}),
+			$elm$core$Dict$empty,
+			selectedSet);
+	});
+var $author$project$TimeUtils$intToWeekday = function (weekNumber) {
+	switch (weekNumber) {
+		case 0:
+			return $elm$time$Time$Mon;
+		case 1:
+			return $elm$time$Time$Tue;
+		case 2:
+			return $elm$time$Time$Wed;
+		case 3:
+			return $elm$time$Time$Thu;
+		case 4:
+			return $elm$time$Time$Fri;
+		case 5:
+			return $elm$time$Time$Sat;
+		default:
+			return $elm$time$Time$Sun;
+	}
+};
+var $elm$core$Tuple$mapFirst = F2(
+	function (func, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
+var $elm$core$List$sortBy = _List_sortBy;
+var $author$project$Main$sortPosixValuesInDict = A2(
+	$elm$core$Dict$foldl,
+	F3(
+		function (key, value, acc) {
+			return A3(
+				$elm$core$Dict$insert,
+				key,
+				A2($elm$core$List$sortBy, $elm$time$Time$posixToMillis, value),
+				acc);
+		}),
+	$elm$core$Dict$empty);
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$TimeUtils$weekdayToString = function (week) {
+	switch (week.$) {
+		case 'Mon':
+			return 'Mon';
+		case 'Tue':
+			return 'Tue';
+		case 'Wed':
+			return 'Wed';
+		case 'Thu':
+			return 'Thu';
+		case 'Fri':
+			return 'Fri';
+		case 'Sat':
+			return 'Sat';
+		default:
+			return 'Sun';
+	}
+};
+var $author$project$Main$showSelectedTimings = function (model) {
+	var _v0 = model.pressed;
+	if (_v0.$ === 'Nothing') {
+		var grouped = A2(
+			$elm$core$List$map,
+			$elm$core$Tuple$mapFirst($author$project$TimeUtils$intToWeekday),
+			A2(
+				$elm$core$List$sortBy,
+				$elm$core$Tuple$first,
+				A2(
+					$author$project$Main$groupIncrementalTimeTogether,
+					model.zone,
+					$author$project$Main$sortPosixValuesInDict(
+						A3($author$project$Main$groupSelectedByDay, model.zone, model.timeSeries, model.selectedSet)))));
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('mt-6 space-y-2')
+				]),
+			A2(
+				$elm$core$List$map,
+				function (_v1) {
+					var weekDay = _v1.a;
+					var timings = _v1.b;
+					return A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('flex items-center space-x-2')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('text-lg leading-6 text-gray-500')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$author$project$TimeUtils$weekdayToString(weekDay))
+									])),
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('text-sm leading-6 text-gray-700')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(timings)
+									]))
+							]));
+				},
+				grouped));
+	} else {
+		return $elm$html$Html$text('');
+	}
 };
 var $author$project$Main$OverCordinate = function (a) {
 	return {$: 'OverCordinate', a: a};
@@ -6161,7 +6823,7 @@ var $elm$html$Html$Events$onMouseOver = function (msg) {
 		'mouseover',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $author$project$Main$addMouseOverIfPressed = F3(
+var $author$project$Main$addOverEventsIfPressed = F3(
 	function (maybePressed, cordinate, ls) {
 		return A2(
 			$elm$core$Maybe$withDefault,
@@ -6177,175 +6839,256 @@ var $author$project$Main$addMouseOverIfPressed = F3(
 				},
 				maybePressed));
 	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
-var $elm$html$Html$Attributes$classList = function (classes) {
-	return $elm$html$Html$Attributes$class(
-		A2(
-			$elm$core$String$join,
-			' ',
-			A2(
-				$elm$core$List$map,
-				$elm$core$Tuple$first,
-				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
-};
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$Events$onMouseDown = function (msg) {
 	return A2(
 		$elm$html$Html$Events$on,
 		'mousedown',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $author$project$Main$makeRow = F2(
 	function (model, rowCord) {
-		return A2(
-			$elm$html$Html$tr,
-			_List_Nil,
+		var timeOnRow = A2(
+			$elm$core$Maybe$withDefault,
+			'',
 			A2(
-				$elm$core$List$cons,
-				A2($elm$html$Html$td, _List_Nil, _List_Nil),
+				$elm$core$Maybe$map,
+				$author$project$TimeUtils$timeFormat(model.zone),
 				A2(
-					$elm$core$List$map,
-					function (colCord) {
-						var cordinate = _Utils_Tuple2(rowCord, colCord);
-						var attrs = A3(
-							$author$project$Main$addMouseOverIfPressed,
-							model.pressed,
-							cordinate,
-							_List_fromArray(
-								[
-									$elm$html$Html$Events$onMouseDown(
-									$author$project$Main$Pressed(cordinate)),
-									$elm$html$Html$Attributes$classList(
-									_List_fromArray(
-										[
-											_Utils_Tuple2(
-											'selected',
-											A2(
-												$elm$core$Set$member,
-												_Utils_Tuple2(rowCord, colCord),
-												model.selectedSet))
-										]))
-								]));
-						return A2(
-							$elm$html$Html$td,
-							attrs,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(
-									$elm$core$String$fromInt(rowCord) + (', ' + $elm$core$String$fromInt(colCord)))
-								]));
-					},
-					A2($elm$core$List$range, 0, 6))));
+					$elm$core$Dict$get,
+					_Utils_Tuple2(rowCord, 1),
+					model.timeSeries)));
+		return A2(
+			$elm$core$List$cons,
+			A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bg-white flex items-center justify-center text-sm leading-6 text-gray-500')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(timeOnRow)
+					])),
+			A2(
+				$elm$core$List$map,
+				function (colCord) {
+					var cordinate = _Utils_Tuple2(rowCord, colCord);
+					var attrs = A3(
+						$author$project$Main$addOverEventsIfPressed,
+						model.pressed,
+						cordinate,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onMouseDown(
+								$author$project$Main$Pressed(cordinate)),
+								$elm$html$Html$Attributes$class(
+								A2(
+									$elm$core$Set$member,
+									_Utils_Tuple2(rowCord, colCord),
+									model.selectedSet) ? 'brand-blue' : 'bg-white'),
+								$elm$html$Html$Attributes$class('w-full h-8 text-center')
+							]));
+					return A2($elm$html$Html$button, attrs, _List_Nil);
+				},
+				$author$project$Main$daySeriesRange));
 	});
-var $elm$html$Html$table = _VirtualDom_node('table');
-var $elm$html$Html$tbody = _VirtualDom_node('tbody');
-var $elm$html$Html$th = _VirtualDom_node('th');
-var $elm$html$Html$thead = _VirtualDom_node('thead');
-var $author$project$Main$view = function (model) {
+var $author$project$TimeUtils$monthToString = function (month) {
+	switch (month.$) {
+		case 'Jan':
+			return 'Jan';
+		case 'Feb':
+			return 'Feb';
+		case 'Mar':
+			return 'Mar';
+		case 'Apr':
+			return 'Apr';
+		case 'May':
+			return 'Ma';
+		case 'Jun':
+			return 'Jun';
+		case 'Jul':
+			return 'Jul';
+		case 'Aug':
+			return 'Aug';
+		case 'Sep':
+			return 'Sep';
+		case 'Oct':
+			return 'Oct';
+		case 'Nov':
+			return 'Nov';
+		default:
+			return 'Dec';
+	}
+};
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var $elm$time$Time$toDay = F2(
+	function (zone, time) {
+		return $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).day;
+	});
+var $elm$time$Time$Apr = {$: 'Apr'};
+var $elm$time$Time$Aug = {$: 'Aug'};
+var $elm$time$Time$Dec = {$: 'Dec'};
+var $elm$time$Time$Feb = {$: 'Feb'};
+var $elm$time$Time$Jan = {$: 'Jan'};
+var $elm$time$Time$Jul = {$: 'Jul'};
+var $elm$time$Time$Jun = {$: 'Jun'};
+var $elm$time$Time$Mar = {$: 'Mar'};
+var $elm$time$Time$May = {$: 'May'};
+var $elm$time$Time$Nov = {$: 'Nov'};
+var $elm$time$Time$Oct = {$: 'Oct'};
+var $elm$time$Time$Sep = {$: 'Sep'};
+var $elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _v0 = $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_v0) {
+			case 1:
+				return $elm$time$Time$Jan;
+			case 2:
+				return $elm$time$Time$Feb;
+			case 3:
+				return $elm$time$Time$Mar;
+			case 4:
+				return $elm$time$Time$Apr;
+			case 5:
+				return $elm$time$Time$May;
+			case 6:
+				return $elm$time$Time$Jun;
+			case 7:
+				return $elm$time$Time$Jul;
+			case 8:
+				return $elm$time$Time$Aug;
+			case 9:
+				return $elm$time$Time$Sep;
+			case 10:
+				return $elm$time$Time$Oct;
+			case 11:
+				return $elm$time$Time$Nov;
+			default:
+				return $elm$time$Time$Dec;
+		}
+	});
+var $author$project$Main$showTimeGrid = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('m-10')
+				$elm$html$Html$Attributes$class('select-none min-w-2xl')
 			]),
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$table,
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('user-select-none')
+						$elm$html$Html$Attributes$class('grid grid-cols-8 text-center text-xs leading-6 text-gray-500')
 					]),
+				A2(
+					$elm$core$List$cons,
+					A2($elm$html$Html$div, _List_Nil, _List_Nil),
+					A2(
+						$elm$core$List$map,
+						function (posix) {
+							return A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('flex flex-col justify-center items-center')
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$div,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('text-lg font-medium')
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text(
+												$author$project$TimeUtils$weekdayToString(
+													A2($elm$time$Time$toWeekday, model.zone, posix)))
+											])),
+										A2(
+										$elm$html$Html$div,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('text-sm flex justify-center items-center space-x-2')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$span,
+												_List_Nil,
+												_List_fromArray(
+													[
+														$elm$html$Html$text(
+														$elm$core$String$fromInt(
+															A2($elm$time$Time$toDay, model.zone, posix)))
+													])),
+												A2(
+												$elm$html$Html$span,
+												_List_Nil,
+												_List_fromArray(
+													[
+														$elm$html$Html$text(
+														$author$project$TimeUtils$monthToString(
+															A2($elm$time$Time$toMonth, model.zone, posix)))
+													]))
+											]))
+									]));
+						},
+						model.daySeries))),
+				A2(
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2(
-						$elm$html$Html$thead,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Sun')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Mon')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Tue')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Wed')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Thu')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Fri')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Sat')
-									]))
-							])),
-						A2(
-						$elm$html$Html$tbody,
-						_List_Nil,
-						A2(
-							$elm$core$List$map,
-							$author$project$Main$makeRow(model),
-							A2($elm$core$List$range, 0, 7)))
-					]))
+						$elm$html$Html$Attributes$class('mt-2 grid grid-cols-8 gap-px bg-gray-200 text-sm border border-gray-200')
+					]),
+				A2(
+					$elm$core$List$concatMap,
+					$author$project$Main$makeRow(model),
+					A2($elm$core$List$range, 1, model.timeSeriesLength)))
 			]));
+};
+var $author$project$Main$view = function (model) {
+	var _v0 = model.now;
+	if (_v0.$ === 'Nothing') {
+		return $elm$html$Html$text('');
+	} else {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('m-10 flex justify-between')
+				]),
+			_List_fromArray(
+				[
+					$author$project$Main$showTimeGrid(model),
+					$author$project$Main$showSelectedTimings(model)
+				]));
+	}
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});

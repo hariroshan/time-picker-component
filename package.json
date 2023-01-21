@@ -2,5 +2,9 @@
   "name": "chatstrike",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT", 
+  "scripts": {
+    "generate": "tailwindcss --input css/styles.css --output styles.css && elm make src/Main.elm --output app.js", 
+    "start": "http-server . -c1"
+  }
 }

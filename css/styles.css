@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .brand-blue {
+        background-color: #12416b;
+    }
+}
