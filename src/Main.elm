@@ -5,7 +5,7 @@ import Browser.Events
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, span, text)
 import Html.Attributes exposing (class)
-import Html.Events exposing (on, onClick, onMouseDown, onMouseOver)
+import Html.Events exposing (onMouseDown, onMouseOver)
 import Json.Decode as D
 import List.Extra
 import Set exposing (Set)

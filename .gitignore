@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 elm-stuff
+app.js
+styles.css
