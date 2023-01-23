@@ -3,7 +3,7 @@ module TimeUtils exposing
     , addMinutes
     , generatePosixList
     , intToWeekday
-    , isIncrementOf30Minutes
+    , isIncrementOfXMinutes
     , minusDays
     , monthToString
     , removeHours
@@ -18,28 +18,29 @@ module TimeUtils exposing
 import Time
 
 
-generatePosixList : Time.Posix -> List Time.Posix
-generatePosixList cleanedStartingPosix =
+generatePosixList : Int -> Time.Posix -> List Time.Posix
+generatePosixList increment cleanedStartingPosix =
     let
         startingPosix : Time.Posix
         startingPosix =
             cleanedStartingPosix
                 |> addMinutes
-                    -- starting series at 6am
+                    -- starting series at 8am
                     (8 * 60)
     in
+    -- This can be passed as parameter too
     List.range 0 (10 * 2)
         |> List.map
             (\multiply ->
                 startingPosix
-                    -- Increment by 30 mins
-                    |> addMinutes (30 * multiply)
+                    -- Increment by increment mins
+                    |> addMinutes (increment * multiply)
             )
 
 
-isIncrementOf30Minutes : Time.Posix -> Time.Posix -> Bool
-isIncrementOf30Minutes source target =
-    addMinutes 30 source == target
+isIncrementOfXMinutes : Int -> Time.Posix -> Time.Posix -> Bool
+isIncrementOfXMinutes x source target =
+    addMinutes x source == target
 
 
 removeMillis : Time.Zone -> Time.Posix -> Time.Posix
