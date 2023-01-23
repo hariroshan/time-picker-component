@@ -46,6 +46,7 @@ type alias Model =
 
     -- Cleaned (removed millis, seconds, minutes, hours from posix) series starting time
     , startingTime : Maybe Time.Posix
+    , now : Time.Posix
     }
 
 
@@ -72,6 +73,7 @@ init _ =
       , daySeries = []
       , timeSeries = Dict.empty
       , timeSeriesLength = 0
+      , now = Time.millisToPosix 0
       }
     , Cmd.batch
         [ Task.map2 Tuple.pair Time.now Time.here
@@ -240,10 +242,10 @@ update msg model =
                 |> Maybe.map
                     (TimeUtils.addDays
                         (if not isNext then
-                            -daySeriesLength
+                            -1
 
                          else
-                            daySeriesLength
+                            1
                         )
                     )
                 |> Maybe.map
@@ -264,7 +266,11 @@ update msg model =
                         |> TimeUtils.removeMinutes zone
                         |> TimeUtils.removeHours zone
             in
-            ( calculateAndSetTimeSeries cleaned { model | zone = zone }
+            ( { model
+                | zone = zone
+                , now = now
+              }
+                |> calculateAndSetTimeSeries cleaned
             , Cmd.none
             )
 
@@ -308,7 +314,7 @@ makeRow model rowCord =
                                         "brand-blue"
 
                                      else
-                                        "bg-white"
+                                        "bg-white hover:bg-gray-100"
                                     )
                                 , class "w-full h-8 text-center"
                                 ]
@@ -344,6 +350,7 @@ showDayOfWeekRow model =
                                         , classList
                                             [ ( "rotate-90 -translate-x-full", i == 0 )
                                             , ( "-rotate-90 translate-x-full", i == 6 )
+                                            , ( "hidden", Time.posixToMillis posix < Time.posixToMillis model.now )
                                             ]
                                         , onClick
                                             (LoadTimeSeries (not <| i == 0))
