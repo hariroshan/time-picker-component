@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "generate": "tailwindcss --input css/styles.css --output styles.css && elm make src/Main.elm --output app.js",
-    "start": "http-server . -c1"
+    "start": "http-server . -c1",
+    "deploy": "yarn run generate && yarn run start"
   },
   "devDependencies": {
     "elm": "^0.19.1-5",
