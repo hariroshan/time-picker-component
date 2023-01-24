@@ -297,9 +297,17 @@ makeRow model rowCord =
             model.timeSeries
                 |> Dict.get ( rowCord, 1 )
                 |> Maybe.map (TimeUtils.timeFormat model.zone)
+                |> Maybe.andThen
+                    (\format ->
+                        if format |> String.contains ":30" then
+                            Nothing
+
+                        else
+                            Just format
+                    )
                 |> Maybe.withDefault ""
     in
-    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500" ] [ text timeOnRow ]
+    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500", classList [("transform -translate-y-[1px]", timeOnRow == "")] ] [ text timeOnRow ]
         :: (daySeriesRange
                 |> List.map
                     (\colCord ->
