@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict exposing (Dict)
-import Html exposing (Attribute, Html, button, div, span, text)
+import Html exposing (Attribute, Html, button, div, h6, p, span, text)
 import Html.Attributes exposing (class, classList)
 import Html.Events exposing (onClick, onMouseDown, onMouseOver)
 import Json.Decode as D
@@ -307,7 +307,7 @@ makeRow model rowCord =
                     )
                 |> Maybe.withDefault ""
     in
-    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500", classList [("-mt-[1px]", timeOnRow == "")] ] [ text timeOnRow ]
+    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500", classList [ ( "-mt-[1px]", timeOnRow == "" ) ] ] [ text timeOnRow ]
         :: (daySeriesRange
                 |> List.map
                     (\colCord ->
@@ -337,7 +337,7 @@ makeRow model rowCord =
 -}
 showDayOfWeekRow : Model -> Html Msg
 showDayOfWeekRow model =
-    div [ class "relative grid grid-cols-8 text-center text-xs leading-6 text-gray-500" ]
+    div [ class "relative grid grid-cols-8 text-center text-xs leading-6 text-gray-500 border-x border-t border-gray-200" ]
         (div [] []
             :: (model.daySeries
                     |> List.indexedMap
@@ -377,12 +377,13 @@ showDayOfWeekRow model =
 -}
 showTimeGrid : Model -> Html Msg
 showTimeGrid model =
-    div [ class "select-none min-w-2xl" ]
+    div [ class "select-none min-w-xl max-w-2xl" ]
         [ showDayOfWeekRow model
-        , div [ class "mt-2 grid grid-cols-8 gap-px bg-gray-200 text-sm border border-gray-200" ]
+        , div [ class "grid grid-cols-8 gap-px bg-gray-200 text-sm border border-gray-200" ]
             (List.range 1 model.timeSeriesLength
                 |> List.concatMap (makeRow model)
             )
+        , showSelectedTimings model
         ]
 
 
@@ -490,31 +491,37 @@ groupIncrementalTimeTogether zone dict =
 -}
 showSelectedTimings : Model -> Html Msg
 showSelectedTimings model =
-    case model.pressed of
-        -- Shows when not pressed
-        Nothing ->
-            let
-                grouped =
-                    model.selectedSet
-                        |> groupSelectedByDay model.zone model.timeSeries
-                        |> sortPosixValuesInDict
-                        |> groupIncrementalTimeTogether model.zone
-                        |> List.sortBy Tuple.first
-                        |> List.map (Tuple.mapFirst TimeUtils.intToWeekday)
-            in
-            div [ class "mt-6 space-y-2" ]
-                (grouped
-                    |> List.map
-                        (\( weekDay, timings ) ->
-                            div [ class "flex items-center space-x-2" ]
-                                [ div [ class "text-lg leading-6 text-gray-500" ] [ text (TimeUtils.weekdayToString weekDay) ]
-                                , div [ class "text-sm leading-6 text-gray-700" ] [ text timings ]
-                                ]
-                        )
-                )
+    div [ class "p-2 h-60 border-x border-b border-gray-200 space-y-1" ] <|
+        h6 [ class "text-gray-500 uppercase font-medium text-xs" ] [ text "Selected Availability" ]
+            :: (case model.pressed of
+                    -- Shows when not pressed
+                    Nothing ->
+                        let
+                            grouped =
+                                model.selectedSet
+                                    |> groupSelectedByDay model.zone model.timeSeries
+                                    |> sortPosixValuesInDict
+                                    |> groupIncrementalTimeTogether model.zone
+                                    |> List.sortBy Tuple.first
+                                    |> List.map (Tuple.mapFirst TimeUtils.intToWeekday)
+                        in
+                        if List.isEmpty grouped then
+                            [ p [] [ text "Drag the mouse to select all of your availability" ]
+                            ]
 
-        Just _ ->
-            empty
+                        else
+                            grouped
+                                |> List.map
+                                    (\( weekDay, timings ) ->
+                                        div [ class "grid grid-cols-4 text-sm leading-6 text-gray-700" ]
+                                            [ div [] [ text (TimeUtils.weekdayToString weekDay) ]
+                                            , div [ class "col-span-3" ] [ text timings ]
+                                            ]
+                                    )
+
+                    Just _ ->
+                        [ empty ]
+               )
 
 
 view : Model -> Html Msg
@@ -524,9 +531,8 @@ view model =
             empty
 
         Just _ ->
-            div [ class "m-10 flex justify-between" ]
+            div [ class "m-10 flex flex-col space-y-2" ]
                 [ showTimeGrid model
-                , showSelectedTimings model
                 ]
 
 
