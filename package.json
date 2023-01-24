@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "generate": "tailwindcss --input css/styles.css --output styles.css && elm make src/Main.elm --output app.js",
+    "generate": "tailwindcss --input css/styles.css --output styles.css && elm make src/Main.elm --output app.js --optimize",
     "start": "http-server . -c1",
     "deploy": "yarn run generate && yarn run start"
   },
