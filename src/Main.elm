@@ -307,7 +307,7 @@ makeRow model rowCord =
                     )
                 |> Maybe.withDefault ""
     in
-    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500", classList [("transform -translate-y-[1px]", timeOnRow == "")] ] [ text timeOnRow ]
+    div [ class "bg-white flex items-center justify-center text-sm leading-6 text-gray-500", classList [("-mt-[1px]", timeOnRow == "")] ] [ text timeOnRow ]
         :: (daySeriesRange
                 |> List.map
                     (\colCord ->
@@ -324,7 +324,7 @@ makeRow model rowCord =
                                      else
                                         "bg-white hover:bg-gray-100"
                                     )
-                                , class "w-full h-8 text-center"
+                                , class "w-full h-6 text-center"
                                 ]
                                     |> addOverEventIfPressed model.pressed cordinate
                         in
